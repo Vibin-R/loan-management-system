@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ApiError } from '@/lib/api';
 import { EMPLOYMENT_OPTIONS } from '@/lib/bre';
 import { formatDate, formatFileSize, formatINR } from '@/lib/format';
+import { useSubmitError } from '@/lib/formErrors';
 import { operationsApi } from '@/lib/operationsApi';
 import type { Loan } from '@/lib/types';
-import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { TextAreaField } from '@/components/ui/TextAreaField';
@@ -35,14 +34,13 @@ export function ReviewLoanModal({ loan, onClose, onDecided }: ReviewLoanModalPro
   const [mode, setMode] = useState<'review' | 'reject'>('review');
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string>();
-  const [error, setError] = useState<string | null>(null);
+  const showSubmitError = useSubmitError();
   const [busy, setBusy] = useState<'approve' | 'reject' | 'slip' | null>(null);
 
   const close = () => {
     setMode('review');
     setReason('');
     setReasonError(undefined);
-    setError(null);
     onClose();
   };
 
@@ -53,7 +51,6 @@ export function ReviewLoanModal({ loan, onClose, onDecided }: ReviewLoanModalPro
       return;
     }
     setBusy(action);
-    setError(null);
     try {
       if (action === 'approve') await operationsApi.approve(loan.id);
       else await operationsApi.reject(loan.id, reason.trim());
@@ -61,7 +58,11 @@ export function ReviewLoanModal({ loan, onClose, onDecided }: ReviewLoanModalPro
       close();
       onDecided(action === 'approve' ? `Approved loan for ${name}` : `Rejected loan for ${name}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+      showSubmitError(err, {
+        fields: ['reason'],
+        setErrors: (errors) => setReasonError(errors.reason),
+        fallback: 'Something went wrong. Try again.',
+      });
     } finally {
       setBusy(null);
     }
@@ -76,7 +77,7 @@ export function ReviewLoanModal({ loan, onClose, onDecided }: ReviewLoanModalPro
       window.open(url, '_blank', 'noopener');
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not open the salary slip.');
+      showSubmitError(err, { fallback: 'Could not open the salary slip.' });
     } finally {
       setBusy(null);
     }
@@ -123,8 +124,6 @@ export function ReviewLoanModal({ loan, onClose, onDecided }: ReviewLoanModalPro
       }
     >
       <div className="space-y-5">
-        {error && <Alert>{error}</Alert>}
-
         {mode === 'review' ? (
           <>
             <section className="space-y-2">

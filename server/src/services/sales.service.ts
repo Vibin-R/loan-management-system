@@ -2,6 +2,7 @@ import type { FilterQuery } from 'mongoose';
 import { APPLICATION_STAGES } from '../constants/applicationStage';
 import { BorrowerProfileModel } from '../models/BorrowerProfile';
 import { UserModel, type UserDoc } from '../models/User';
+import { ageOn, formatCalendarDate, toISTCalendarDate } from '../utils/dates';
 import { toRupees } from '../utils/money';
 import { containsRegex, skipFor } from '../utils/pagination';
 import type { LeadsQuery } from '../validators/operations.schema';
@@ -37,7 +38,7 @@ export async function listLeads(query: LeadsQuery) {
   ]);
 
   const profiles = await BorrowerProfileModel.find({ userId: { $in: users.map((u) => u._id) } })
-    .select('userId pan monthlySalary employmentMode bre')
+    .select('userId fullName pan dob monthlySalary employmentMode bre')
     .lean();
   const profileByUser = new Map(profiles.map((p) => [p.userId.toString(), p]));
 
@@ -51,10 +52,18 @@ export async function listLeads(query: LeadsQuery) {
       signedUpAt: user.createdAt,
       profile: profile
         ? {
+            fullName: profile.fullName,
             pan: profile.pan,
+            dob: formatCalendarDate(toISTCalendarDate(profile.dob)),
+            ageAtCheck: ageOn(
+              toISTCalendarDate(profile.dob),
+              toISTCalendarDate(profile.bre.checkedAt),
+            ),
             monthlySalary: toRupees(profile.monthlySalary),
             employmentMode: profile.employmentMode,
-            breFailures: profile.bre.failures.map((f) => f.message),
+            checkedAt: profile.bre.checkedAt,
+            // Rule codes, not the borrower-facing sentences: staff see their own wording.
+            breFailures: profile.bre.failures.map((f) => f.rule),
           }
         : null,
     };

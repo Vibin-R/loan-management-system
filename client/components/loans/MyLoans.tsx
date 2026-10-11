@@ -7,6 +7,7 @@ import type { Loan } from '@/lib/types';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { LoanSummaryCard } from './LoanSummaryCard';
 
 /** All of the borrower's loans, newest first, each with its status timeline. */
@@ -32,21 +33,22 @@ export function MyLoans() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">My loans</h1>
-          <p className="text-sm text-muted">Track each application from review to repayment.</p>
-        </div>
-        {loans && !hasActiveLoan && (
-          <Link
-            href="/apply"
-            className="rounded-md bg-gradient-to-r from-primary to-primary-strong px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Apply for a loan
-          </Link>
-        )}
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="My loans"
+        subtitle="Track each application from review to repayment."
+        actions={
+          loans &&
+          !hasActiveLoan && (
+            <Link
+              href="/apply"
+              className="mr-2 rounded-md bg-gradient-to-r from-primary to-primary-strong px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Apply for a loan
+            </Link>
+          )
+        }
+      />
 
       {error && (
         <div className="space-y-3">

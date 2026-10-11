@@ -15,7 +15,7 @@ const STAGES = [
 /** Dark brand panel beside the login and signup forms. Hidden on small screens. */
 export function AuthShowcase() {
   return (
-    <aside className="relative hidden flex-col justify-between overflow-hidden bg-ink px-12 py-10 text-ink-foreground lg:flex lg:w-[52%]">
+    <aside className="relative hidden flex-col justify-between overflow-hidden bg-ink px-10 py-8 text-ink-foreground lg:flex lg:w-[52%] short:py-6">
       <p className="text-sm text-ink-foreground/70">
         Personal loans made simple, from application to repayment.
       </p>
@@ -25,30 +25,30 @@ export function AuthShowcase() {
         aria-hidden="true"
         className="pointer-events-none absolute left-[38%] top-[38%] -translate-x-1/2 -translate-y-1/2"
       >
-        <div className="h-[22rem] w-[22rem] rounded-full border border-white/10" />
+        <div className="h-[18rem] w-[18rem] rounded-full border border-white/10" />
         <div className="absolute inset-12 rounded-full border border-white/10" />
       </div>
 
-      <div className="relative space-y-10">
-        <h2 className="text-5xl font-semibold leading-[1.05] tracking-tight xl:text-6xl">
+      <div className="relative space-y-6 xl:space-y-8 short:space-y-4">
+        <h2 className="text-4xl font-semibold leading-[1.05] tracking-tight xl:text-5xl short:text-3xl">
           Borrow
           <br />
           with clarity
         </h2>
 
-        <div className="max-w-sm rounded-2xl border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur">
+        <div className="max-w-sm rounded-2xl border border-white/10 bg-white/[0.06] p-5 shadow-2xl short:p-4 backdrop-blur">
           <div className="flex items-baseline justify-between">
             <span className="text-xs uppercase tracking-wider text-ink-foreground/60">
               Loan preview
             </span>
             <span className="text-xs text-ink-foreground/60">{ANNUAL_INTEREST_RATE}% p.a.</span>
           </div>
-          <p className="mt-2 text-3xl font-semibold tabular-nums">
+          <p className="mt-2 text-3xl font-semibold tabular-nums short:mt-1 short:text-2xl">
             {formatINRWhole(EXAMPLE.principal)}
           </p>
           <p className="text-sm text-ink-foreground/60">for {EXAMPLE.tenureDays} days</p>
 
-          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm short:mt-3">
             <div className="rounded-xl bg-white/[0.06] p-3">
               <dt className="text-ink-foreground/60">Interest</dt>
               <dd className="mt-1 font-medium tabular-nums">{formatINR(EXAMPLE.interest)}</dd>
@@ -59,7 +59,10 @@ export function AuthShowcase() {
             </div>
           </dl>
 
-          <ol className="mt-5 grid grid-cols-4 text-[11px]" aria-label="Loan status">
+          <ol
+            className="mt-5 grid grid-cols-4 text-[11px] short:mt-3 tiny:hidden"
+            aria-label="Loan status"
+          >
             {STAGES.map((stage, i) => (
               <li key={stage.label} className="relative flex flex-col items-center gap-1.5">
                 {/* Connector to the next step */}

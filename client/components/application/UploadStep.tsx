@@ -1,12 +1,12 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { ApiError } from '@/lib/api';
 import { borrowerApi } from '@/lib/borrowerApi';
+import { useSubmitError } from '@/lib/formErrors';
 import { formatFileSize } from '@/lib/format';
 import type { SalarySlipInfo } from '@/lib/types';
-import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { StepNav } from './StepNav';
 import { CheckIcon } from '@/components/ui/icons';
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -34,7 +34,9 @@ interface UploadStepProps {
 export function UploadStep({ current, onUploaded, onBack, onContinue }: UploadStepProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  /** Problem with the chosen file, shown under the drop zone. Other failures go to a toast. */
+  const [fileError, setFileError] = useState<string | null>(null);
+  const showSubmitError = useSubmitError();
   const [dragging, setDragging] = useState(false);
 
   const uploading = progress !== null;
@@ -42,10 +44,10 @@ export function UploadStep({ current, onUploaded, onBack, onContinue }: UploadSt
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
-    setError(null);
+    setFileError(null);
     const problem = checkFile(file);
     if (problem) {
-      setError(problem);
+      setFileError(problem);
       return;
     }
     setProgress(0);
@@ -53,7 +55,11 @@ export function UploadStep({ current, onUploaded, onBack, onContinue }: UploadSt
       const { salarySlip } = await borrowerApi.uploadSalarySlip(file, setProgress);
       onUploaded(salarySlip);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Upload failed. Please try again.');
+      showSubmitError(err, {
+        fields: ['file'],
+        setErrors: (errors) => setFileError(errors.file ?? null),
+        fallback: 'Upload failed. Please try again.',
+      });
     } finally {
       setProgress(null);
       if (inputRef.current) inputRef.current.value = '';
@@ -62,8 +68,6 @@ export function UploadStep({ current, onUploaded, onBack, onContinue }: UploadSt
 
   return (
     <div className="space-y-5">
-      {error && <Alert>{error}</Alert>}
-
       <input
         ref={inputRef}
         type="file"
@@ -109,7 +113,11 @@ export function UploadStep({ current, onUploaded, onBack, onContinue }: UploadSt
             if (!uploading) void handleFile(e.dataTransfer.files[0]);
           }}
           className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
-            dragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+            dragging
+              ? 'border-primary bg-primary/5'
+              : fileError
+                ? 'border-danger/60 hover:border-danger'
+                : 'border-border hover:border-primary/50'
           }`}
         >
           {uploading ? (
@@ -130,15 +138,18 @@ export function UploadStep({ current, onUploaded, onBack, onContinue }: UploadSt
           )}
         </div>
       )}
+      {fileError && (
+        <p role="alert" className="-mt-3 px-1 text-xs text-danger">
+          {fileError}
+        </p>
+      )}
 
-      <div className="flex justify-between pt-2">
-        <Button variant="secondary" onClick={onBack} disabled={uploading}>
-          Back
-        </Button>
-        <Button onClick={onContinue} disabled={!current || uploading}>
-          Continue
-        </Button>
-      </div>
+      <StepNav
+        onPrevious={uploading ? undefined : onBack}
+        nextLabel="Next"
+        onNext={onContinue}
+        nextDisabled={!current || uploading}
+      />
     </div>
   );
 }

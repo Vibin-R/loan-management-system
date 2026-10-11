@@ -111,10 +111,16 @@ export interface Lead {
   stage: LeadStage;
   signedUpAt: string;
   profile: {
+    fullName: string;
     pan: string;
+    /** YYYY-MM-DD */
+    dob: string;
+    ageAtCheck: number;
     monthlySalary: number;
     employmentMode: EmploymentMode;
-    breFailures: string[];
+    checkedAt: string;
+    /** Eligibility rules this borrower failed (empty when eligible). */
+    breFailures: BreFailure['rule'][];
   } | null;
 }
 
@@ -122,4 +128,12 @@ export interface ListParams {
   page: number;
   limit?: number;
   search?: string;
+}
+
+/** GET /stats/overview: numbers behind the staff overview charts. Money in rupees. */
+export interface OverviewStats {
+  statusCounts: Record<LoanStatus, number>;
+  amounts: { disbursed: number; collected: number; outstanding: number };
+  /** One entry per IST day, oldest first, ending today. Dates are YYYY-MM-DD. */
+  daily: { date: string; applications: number; disbursals: number; collected: number }[];
 }

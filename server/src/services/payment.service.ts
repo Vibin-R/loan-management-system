@@ -16,10 +16,19 @@ interface PaymentRequest {
   amountPaise: number;
   paidOn: Date;
   actorId: string;
+  /** Fixed when the loan is created, so it is safe to use in the guards below. */
+  totalRepayment: number;
 }
 
-/** Checks that give the executive a precise message before anything is written. */
-async function validatePayment(loanId: string, input: PaymentInput, amountPaise: number) {
+/**
+ * Checks that give the executive a precise message before anything is written.
+ * Returns the loan's total repayment for the atomic guards.
+ */
+async function validatePayment(
+  loanId: string,
+  input: PaymentInput,
+  amountPaise: number,
+): Promise<number> {
   const loan = await LoanModel.findById(loanId)
     .select('status totalRepayment amountPaid disbursedAt')
     .lean();
@@ -51,18 +60,20 @@ async function validatePayment(loanId: string, input: PaymentInput, amountPaise:
   if (await PaymentModel.exists({ utr: input.utr })) {
     throw AppError.conflict('DUPLICATE_UTR', 'A payment with this UTR number is already recorded');
   }
+  return loan.totalRepayment;
 }
 
 /**
  * Adds the payment to the loan's balance, but only while the loan is DISBURSED and the payment
- * still fits within the outstanding amount. This guard makes concurrent payments safe.
+ * still fits: `amountPaid ≤ totalRepayment − amount` is checked and applied in one atomic
+ * update, so two payments racing each other can never overpay the loan.
  */
 async function applyToBalance(req: PaymentRequest, session?: ClientSession) {
   const loan = await LoanModel.findOneAndUpdate(
     {
       _id: req.loanId,
       status: LOAN_STATUS.DISBURSED,
-      $expr: { $lte: [{ $add: ['$amountPaid', req.amountPaise] }, '$totalRepayment'] },
+      amountPaid: { $lte: req.totalRepayment - req.amountPaise },
     },
     { $inc: { amountPaid: req.amountPaise } },
     { new: true, session },
@@ -83,7 +94,7 @@ async function closeIfFullyPaid(req: PaymentRequest, session?: ClientSession) {
     {
       _id: req.loanId,
       status: LOAN_STATUS.DISBURSED,
-      $expr: { $eq: ['$amountPaid', '$totalRepayment'] },
+      amountPaid: req.totalRepayment,
     },
     {
       $set: { status: LOAN_STATUS.CLOSED, closedAt: at, isActive: false },
@@ -124,16 +135,16 @@ async function recordWithTransaction(req: PaymentRequest) {
 }
 
 /**
- * Standalone MongoDB (no transactions): reserve the amount on the balance first with the
- * guarded update, then insert the payment. If the insert fails (e.g. a duplicate UTR racing
- * in), the reservation is undone, so the balance and payments never drift apart.
+ * Standalone MongoDB (no transactions): insert the payment first so the unique UTR index
+ * rejects a duplicate before the balance is touched. If the balance guard then fails (e.g. a concurrent payment
+ * used up the outstanding amount), the payment row is removed again.
  */
 async function recordWithoutTransaction(req: PaymentRequest) {
-  await applyToBalance(req);
+  const payment = await PaymentModel.create(paymentDoc(req));
   try {
-    await PaymentModel.create(paymentDoc(req));
+    await applyToBalance(req);
   } catch (err) {
-    await LoanModel.updateOne({ _id: req.loanId }, { $inc: { amountPaid: -req.amountPaise } });
+    await PaymentModel.deleteOne({ _id: payment._id });
     throw err;
   }
   await closeIfFullyPaid(req);
@@ -141,7 +152,7 @@ async function recordWithoutTransaction(req: PaymentRequest) {
 
 export async function recordPayment(loanId: string, input: PaymentInput, actor: UserAccess) {
   const amountPaise = toPaise(input.amount);
-  await validatePayment(loanId, input, amountPaise);
+  const totalRepayment = await validatePayment(loanId, input, amountPaise);
 
   const req: PaymentRequest = {
     loanId,
@@ -149,6 +160,7 @@ export async function recordPayment(loanId: string, input: PaymentInput, actor: 
     amountPaise,
     paidOn: istMidnight(input.paidOn),
     actorId: actor.id,
+    totalRepayment,
   };
   // A duplicate UTR racing past validation hits the unique index → 409 DUPLICATE_UTR.
   if (supportsTransactions()) await recordWithTransaction(req);

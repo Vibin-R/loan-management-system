@@ -32,17 +32,17 @@ export function CollectionModule() {
               loan={loan}
               actions={<Button onClick={() => setActive(loan)}>Record payment</Button>}
             >
-              <div className="max-w-md space-y-1 pt-1">
+              <div className="mt-1.5 space-y-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-background">
                   <div
                     className="h-full rounded-full bg-success"
                     style={{ width: `${paidPercent}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted">
-                  Paid {formatINR(loan.amountPaid)} ·{' '}
+                <p className="whitespace-nowrap text-xs text-muted">
+                  {Math.floor(paidPercent)}% paid ·{' '}
                   <span className="font-medium text-foreground">
-                    {formatINR(loan.outstanding)} outstanding
+                    {formatINR(loan.outstanding)} due
                   </span>
                 </p>
               </div>

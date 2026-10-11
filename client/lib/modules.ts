@@ -4,6 +4,8 @@ export interface DashboardModule {
   key: 'sales' | 'sanction' | 'disbursement' | 'collection';
   label: string;
   description: string;
+  /** What the module's queue count means, e.g. "awaiting review". */
+  countLabel: string;
   href: string;
   /** Holding this permission shows the module in the sidebar and allows opening it. */
   permission: Permission;
@@ -15,6 +17,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     key: 'sales',
     label: 'Sales',
     description: 'Registered users who have not applied yet',
+    countLabel: 'open leads',
     href: '/dashboard/sales',
     permission: PERMISSIONS.LEAD_READ,
   },
@@ -22,6 +25,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     key: 'sanction',
     label: 'Sanction',
     description: 'Review applications and approve or reject them',
+    countLabel: 'awaiting review',
     href: '/dashboard/sanction',
     permission: PERMISSIONS.LOAN_SANCTION,
   },
@@ -29,6 +33,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     key: 'disbursement',
     label: 'Disbursement',
     description: 'Release funds for sanctioned loans',
+    countLabel: 'ready to disburse',
     href: '/dashboard/disbursement',
     permission: PERMISSIONS.LOAN_DISBURSE,
   },
@@ -36,6 +41,7 @@ export const DASHBOARD_MODULES: DashboardModule[] = [
     key: 'collection',
     label: 'Collection',
     description: 'Record repayments on disbursed loans',
+    countLabel: 'being repaid',
     href: '/dashboard/collection',
     permission: PERMISSIONS.PAYMENT_RECORD,
   },

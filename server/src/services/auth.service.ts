@@ -37,7 +37,10 @@ export async function signup(input: SignupInput): Promise<AuthResult> {
     throw new AppError(500, 'SETUP_INCOMPLETE', 'Roles are missing. Run `npm run seed` first.');
   }
 
-  // A duplicate email hits the unique index and becomes 409 EMAIL_TAKEN in the error handler.
+  if (await UserModel.exists({ email: input.email })) {
+    throw AppError.conflict('EMAIL_TAKEN', 'An account with this email already exists');
+  }
+  // Two signups racing past the check above hit the unique index → 409 in the error handler.
   const user = await UserModel.create({
     name: input.name,
     email: input.email,

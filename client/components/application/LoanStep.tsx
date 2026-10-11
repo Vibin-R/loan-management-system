@@ -1,13 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ApiError } from '@/lib/api';
 import { borrowerApi } from '@/lib/borrowerApi';
+import { useSubmitError } from '@/lib/formErrors';
 import { formatINR, formatINRWhole } from '@/lib/format';
 import { ANNUAL_INTEREST_RATE, LOAN_LIMITS, calculateLoan } from '@/lib/loanMath';
 import type { Loan } from '@/lib/types';
-import { Alert } from '@/components/ui/Alert';
-import { Button } from '@/components/ui/Button';
+import { StepNav } from './StepNav';
 import { Slider } from '@/components/ui/Slider';
 
 interface LoanStepProps {
@@ -21,27 +20,24 @@ const formatDays = (days: number) => `${days} days`;
 export function LoanStep({ onBack, onApplied }: LoanStepProps) {
   const [principal, setPrincipal] = useState(100_000);
   const [tenureDays, setTenureDays] = useState(180);
-  const [error, setError] = useState<string | null>(null);
+  const showSubmitError = useSubmitError();
   const [submitting, setSubmitting] = useState(false);
 
   const quote = useMemo(() => calculateLoan(principal, tenureDays), [principal, tenureDays]);
 
   async function handleApply() {
-    setError(null);
     setSubmitting(true);
     try {
       const { loan } = await borrowerApi.applyForLoan(principal, tenureDays);
       onApplied(loan);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not submit your application.');
+      showSubmitError(err, { fallback: 'Could not submit your application.' });
       setSubmitting(false);
     }
   }
 
   return (
     <div className="space-y-6">
-      {error && <Alert>{error}</Alert>}
-
       <div className="grid gap-6 md:grid-cols-[1fr_17rem]">
         <div className="space-y-8 rounded-2xl border border-border p-5">
           <Slider
@@ -88,14 +84,12 @@ export function LoanStep({ onBack, onApplied }: LoanStepProps) {
         </aside>
       </div>
 
-      <div className="flex justify-between">
-        <Button variant="secondary" onClick={onBack} disabled={submitting}>
-          Back
-        </Button>
-        <Button onClick={handleApply} loading={submitting}>
-          Apply for {formatINRWhole(principal)}
-        </Button>
-      </div>
+      <StepNav
+        onPrevious={onBack}
+        nextLabel={`Apply for ${formatINRWhole(principal)}`}
+        onNext={() => void handleApply()}
+        busy={submitting}
+      />
     </div>
   );
 }

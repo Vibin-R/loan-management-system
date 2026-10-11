@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth-context';
 import { borrowerApi } from '@/lib/borrowerApi';
 import type { ApplicationState, ApplicationStep } from '@/lib/types';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { LoanSummaryCard } from '@/components/loans/LoanSummaryCard';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { DetailsStep } from './DetailsStep';
 import { LoanStep } from './LoanStep';
 import { Stepper } from './Stepper';
@@ -41,6 +43,8 @@ const STEP_COPY: Record<Exclude<ApplicationStep, 'SUBMITTED'>, { title: string; 
  * or a return visit opens at the right step with earlier answers filled in.
  */
 export function ApplicationWizard() {
+  const { user } = useAuth();
+  const greeting = `Hello, ${user?.name.split(' ')[0] ?? ''}`;
   const [state, setState] = useState<ApplicationState | null>(null);
   const [step, setStep] = useState<ApplicationStep>('DETAILS');
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -81,15 +85,12 @@ export function ApplicationWizard() {
 
   if (step === 'SUBMITTED' && state.activeLoan) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
+        <PageHeader
+          title="Application submitted"
+          subtitle="We'll review it shortly. Follow its progress here or under My loans."
+        />
         <Stepper current={STEP_INDEX.SUBMITTED} />
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Application submitted</h1>
-          <p className="text-sm text-muted">
-            We&apos;ll review it shortly. You can follow its progress on this page or under My
-            loans.
-          </p>
-        </div>
         <LoanSummaryCard loan={state.activeLoan} />
         <Link
           href="/my-loans"
@@ -103,21 +104,39 @@ export function ApplicationWizard() {
 
   const copy = STEP_COPY[step === 'SUBMITTED' ? 'DETAILS' : step];
 
+  // Which steps can be opened from the stepper: details always; upload once eligible;
+  // loan choice once a slip is uploaded. "Account" (index 0) is never reopened.
+  const reachable: Partial<Record<number, ApplicationStep>> = {
+    1: 'DETAILS',
+    ...(state.profile?.bre.passed ? { 2: 'UPLOAD' as const } : {}),
+    ...(state.profile?.bre.passed && state.profile.salarySlip ? { 3: 'CONFIGURE' as const } : {}),
+  };
+
   return (
     <div className="space-y-8">
-      <Stepper current={STEP_INDEX[step]} />
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{copy.title}</h1>
-        <p className="text-sm text-muted">{copy.text}</p>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+      <PageHeader title={greeting} subtitle="Complete these steps to apply for a personal loan." />
+      <Stepper
+        current={STEP_INDEX[step]}
+        canSelect={(i) => reachable[i] !== undefined}
+        onSelect={(i) => {
+          const target = reachable[i];
+          if (target) setStep(target);
+        }}
+      />
+      <div
+        key={step}
+        className="animate-fade-up space-y-6 rounded-2xl border border-border bg-surface p-5 sm:p-7"
+      >
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">{copy.title}</h2>
+          <p className="text-sm text-muted">{copy.text}</p>
+        </div>
         {step === 'DETAILS' && (
           <DetailsStep
             profile={state.profile}
             onEligible={(profile) => {
               setState((s) => s && { ...s, profile });
-              setStep(profile.salarySlip ? 'CONFIGURE' : 'UPLOAD');
+              setStep('UPLOAD'); // always the next step; an uploaded slip shows there
             }}
           />
         )}

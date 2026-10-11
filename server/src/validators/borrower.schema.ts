@@ -13,7 +13,9 @@ export const profileSchema = z.object({
     .trim()
     .min(2, 'Enter your full name')
     .max(100, 'Name must be at most 100 characters'),
-  pan: z.string().trim().toUpperCase().length(10, 'PAN must be 10 characters'),
+  // Format (5 letters, 4 digits, 1 letter) is a BRE rule, so a wrong PAN is reported as an
+  // eligibility failure alongside the others rather than as a form error.
+  pan: z.string().trim().toUpperCase().min(1, 'Enter your PAN').max(20, 'PAN is too long'),
   dob: z.string().transform((value, ctx) => {
     const date = parseCalendarDate(value);
     if (!date) {

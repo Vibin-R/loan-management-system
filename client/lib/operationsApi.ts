@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Lead, LeadStage, ListParams, Loan, Paginated, Payment } from './types';
+import type { Lead, LeadStage, ListParams, Loan, OverviewStats, Paginated, Payment } from './types';
 
 const listQuery = ({ page, limit = 10, search }: ListParams) => ({ page, limit, search });
 
@@ -28,4 +28,6 @@ export const operationsApi = {
     api.post<{ loan: Loan; payment: Payment }>(`/collection/loans/${loanId}/payments`, input),
 
   salarySlip: (loanId: string) => api.getBlob(`/loans/${loanId}/salary-slip`),
+
+  overviewStats: () => api.get<OverviewStats>('/stats/overview'),
 };

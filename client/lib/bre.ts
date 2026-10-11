@@ -38,7 +38,7 @@ export function eligibilityHints(values: {
 }): Partial<Record<'pan' | 'dob' | 'monthlySalary' | 'employmentMode', string>> {
   const hints: Partial<Record<'pan' | 'dob' | 'monthlySalary' | 'employmentMode', string>> = {};
 
-  if (values.pan.length === 10 && !BRE_RULES.panPattern.test(values.pan)) {
+  if (values.pan && !BRE_RULES.panPattern.test(values.pan)) {
     hints.pan = 'PAN format is 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)';
   }
   const age = values.dob ? ageFromDob(values.dob) : null;

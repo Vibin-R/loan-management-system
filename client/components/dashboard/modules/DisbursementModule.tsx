@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { formatINR } from '@/lib/format';
+import { useSubmitError } from '@/lib/formErrors';
 import { operationsApi } from '@/lib/operationsApi';
 import { useToast } from '@/lib/toast';
 import type { Loan } from '@/lib/types';
 import { usePaginatedList } from '@/lib/usePaginatedList';
-import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { LoanQueueCard } from '../LoanQueueCard';
@@ -17,26 +17,27 @@ import { QueueView } from '../QueueView';
 export function DisbursementModule() {
   const list = usePaginatedList(operationsApi.listSanctioned);
   const [confirming, setConfirming] = useState<Loan | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
+  const showSubmitError = useSubmitError();
 
-  const close = () => {
-    setConfirming(null);
-    setError(null);
-  };
+  const close = () => setConfirming(null);
 
   async function disburse() {
     if (!confirming) return;
     setSubmitting(true);
-    setError(null);
     try {
       await operationsApi.disburse(confirming.id);
       toast(`Disbursed ${formatINR(confirming.principal)} to ${confirming.applicant.fullName}`);
       close();
       void list.reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not disburse. Try again.');
+      showSubmitError(err, { fallback: 'Could not disburse. Try again.' });
+      // Someone else already moved this loan: close and refresh so the queue is current.
+      if (err instanceof ApiError && err.status === 409) {
+        close();
+        void list.reload();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -74,7 +75,6 @@ export function DisbursementModule() {
       >
         {confirming && (
           <div className="space-y-3">
-            {error && <Alert>{error}</Alert>}
             <p className="text-sm">
               Disburse <strong>{formatINR(confirming.principal)}</strong> to{' '}
               <strong>{confirming.applicant.fullName}</strong>? The loan moves to Collection, where{' '}

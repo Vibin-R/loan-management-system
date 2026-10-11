@@ -5,6 +5,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Pagination } from '@/components/ui/Pagination';
 import { SkeletonRows } from '@/components/ui/Skeleton';
+import { SearchIcon } from '@/components/ui/icons';
 
 interface QueueViewProps<T> {
   list: {
@@ -45,17 +46,20 @@ export function QueueView<T>({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          value={list.search}
-          onChange={(e) => list.setSearch(e.target.value)}
-          placeholder={searchPlaceholder}
-          aria-label="Search"
-          className="h-10 min-w-0 flex-1 basis-60 rounded-full border border-border bg-surface px-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-        />
+        <label className="relative min-w-0 flex-1 basis-60">
+          <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            value={list.search}
+            onChange={(e) => list.setSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            aria-label="Search"
+            className="h-10 w-full rounded-full border border-border bg-surface pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+          />
+        </label>
         {toolbar}
         {data && (
-          <span className="text-sm text-muted">
+          <span className="rounded-full border border-border px-3 py-1.5 text-sm text-muted">
             {data.total} {data.total === 1 ? 'item' : 'items'}
           </span>
         )}
@@ -73,7 +77,7 @@ export function QueueView<T>({
       {!error && loading && !data && <SkeletonRows />}
 
       {!error && data && data.items.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-12 text-center">
+        <div className="animate-fade-in rounded-2xl border border-dashed border-border px-6 py-14 text-center">
           <p className="font-medium">{searching ? 'No matches' : emptyTitle}</p>
           <p className="mt-1 text-sm text-muted">
             {searching ? 'Try a different name, email or PAN.' : emptyText}
@@ -82,7 +86,9 @@ export function QueueView<T>({
       )}
 
       {!error && data && data.items.length > 0 && (
-        <ul className={`space-y-3 transition-opacity ${loading ? 'opacity-60' : ''}`}>
+        <ul
+          className={`animate-fade-in divide-y divide-border border-y border-border transition-opacity ${loading ? 'opacity-60' : ''}`}
+        >
           {data.items.map((item) => (
             <li key={itemKey(item)}>{renderItem(item)}</li>
           ))}

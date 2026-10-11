@@ -52,3 +52,8 @@ export const loanRoutes = Router()
     byId,
     ops.getSalarySlip,
   );
+
+/** Overview charts for any staff member who can read loans. */
+export const statsRoutes = Router()
+  .use(authenticate, requirePermission(PERMISSIONS.LOAN_READ))
+  .get('/overview', ops.getOverview);

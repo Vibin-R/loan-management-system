@@ -6,6 +6,7 @@ import { listLoansByStatus } from '../services/loanQueue.service';
 import { transitionLoan } from '../services/loanTransition.service';
 import * as paymentService from '../services/payment.service';
 import { listLeads } from '../services/sales.service';
+import { getOverviewStats } from '../services/stats.service';
 import type { ListQuery } from '../utils/pagination';
 import type {
   IdParam,
@@ -80,4 +81,9 @@ export async function getSalarySlip(req: Request, res: Response) {
   res.setHeader('Content-Type', file.mimeType);
   res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.fileName)}"`);
   res.sendFile(file.path);
+}
+
+// Overview
+export async function getOverview(_req: Request, res: Response) {
+  res.json({ data: await getOverviewStats() });
 }

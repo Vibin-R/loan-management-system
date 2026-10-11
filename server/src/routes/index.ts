@@ -8,6 +8,7 @@ import {
   loanRoutes,
   salesRoutes,
   sanctionRoutes,
+  statsRoutes,
 } from './operations.routes';
 
 /** All API routes, mounted under /api/v1 in app.ts. */
@@ -21,5 +22,6 @@ router.use('/sanction', sanctionRoutes);
 router.use('/disbursement', disbursementRoutes);
 router.use('/collection', collectionRoutes);
 router.use('/loans', loanRoutes);
+router.use('/stats', statsRoutes);
 
 export default router;

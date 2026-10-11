@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.ts\"",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "test:e2e": "node tests/e2e.mjs"
   },
   "dependencies": {
     "bcryptjs": "3.0.2",

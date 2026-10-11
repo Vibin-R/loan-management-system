@@ -15,11 +15,12 @@ interface AuthLayoutProps {
  */
 export function AuthLayout({ title, subtitle, switchTo, children }: AuthLayoutProps) {
   return (
-    <main className="flex min-h-screen bg-backdrop lg:p-6">
-      <div className="mx-auto flex w-full max-w-6xl overflow-hidden bg-surface lg:min-h-[44rem] lg:rounded-[2rem] lg:bg-ink lg:shadow-2xl">
+    <main className="flex min-h-screen bg-backdrop lg:h-screen lg:items-center lg:justify-center">
+      {/* On desktop the card is capped at 80vw × 90vh so the page itself never scrolls. */}
+      <div className="flex w-full overflow-hidden bg-surface lg:h-[90vh] lg:max-w-[80vw] lg:rounded-[2rem] lg:bg-ink lg:shadow-2xl">
         <AuthShowcase />
 
-        <section className="relative z-10 flex flex-1 flex-col bg-surface px-6 py-6 sm:px-10 lg:-ml-8 lg:rounded-[2rem] lg:px-14 lg:py-8">
+        <section className="relative z-10 flex flex-1 flex-col bg-surface px-6 py-6 sm:px-10 lg:-ml-8 lg:overflow-y-auto lg:rounded-[2rem] lg:px-12 lg:py-6 short:py-4">
           <header className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
               <span
@@ -39,15 +40,16 @@ export function AuthLayout({ title, subtitle, switchTo, children }: AuthLayoutPr
             </Link>
           </header>
 
-          <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
-            <h1 className="text-4xl font-medium tracking-tight">{title}</h1>
+          <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-8 lg:py-4 short:py-2">
+            <h1 className="text-3xl font-medium tracking-tight xl:text-4xl short:text-2xl">
+              {title}
+            </h1>
             <p className="mt-2 text-sm text-muted">{subtitle}</p>
-            <div className="mt-8">{children}</div>
+            <div className="mt-6 short:mt-4">{children}</div>
           </div>
 
-          <footer className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-            <span>© {new Date().getFullYear()} Loan Management System</span>
-            <span>Borrowers and staff use the same sign-in</span>
+          <footer className="text-xs text-muted tiny:hidden">
+            © {new Date().getFullYear()} Loan Management System
           </footer>
         </section>
       </div>

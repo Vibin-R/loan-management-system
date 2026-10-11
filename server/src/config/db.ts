@@ -20,6 +20,21 @@ export async function connectDatabase(): Promise<void> {
       ? 'MongoDB connected (replica set: payments use transactions)'
       : 'MongoDB connected (standalone: payments use guarded atomic updates)',
   );
+  await ensureIndexes();
+}
+
+/**
+ * Builds every model's indexes before the API accepts requests, and logs any that fail.
+ * Unique indexes (email, UTR, one active loan) back business rules, so a silent failure
+ * would weaken them without anyone noticing.
+ */
+async function ensureIndexes(): Promise<void> {
+  const results = await Promise.allSettled(
+    Object.values(mongoose.models).map((model) => model.init()),
+  );
+  const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  failed.forEach((r) => logger.error({ err: r.reason }, 'Index build failed'));
+  if (failed.length === 0) logger.info('Database indexes ready');
 }
 
 let transactionsSupported = false;

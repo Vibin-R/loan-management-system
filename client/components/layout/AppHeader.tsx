@@ -24,7 +24,7 @@ export function AppHeader({ homeHref, links = [] }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
-        <div className="flex min-w-0 items-center gap-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-6">
           <Link
             href={homeHref}
             className="flex items-center gap-2 text-sm font-semibold tracking-tight"
@@ -35,10 +35,10 @@ export function AppHeader({ homeHref, links = [] }: AppHeaderProps) {
             >
               L
             </span>
-            LMS
+            <span className="hidden sm:inline">LMS</span>
           </Link>
           {links.length > 0 && (
-            <nav aria-label="Main" className="flex gap-1">
+            <nav aria-label="Main" className="flex gap-0.5 sm:gap-1">
               {links.map((link) => {
                 const active = pathname.startsWith(link.href);
                 return (
@@ -46,7 +46,7 @@ export function AppHeader({ homeHref, links = [] }: AppHeaderProps) {
                     key={link.href}
                     href={link.href}
                     aria-current={active ? 'page' : undefined}
-                    className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+                    className={`whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm transition-colors sm:px-3 ${
                       active
                         ? 'bg-primary/10 font-medium text-primary'
                         : 'text-muted hover:text-foreground'
@@ -65,7 +65,7 @@ export function AppHeader({ homeHref, links = [] }: AppHeaderProps) {
               <p className="truncate text-sm font-medium">{user.name}</p>
               <p className="truncate text-xs text-muted">{user.roles.join(', ')}</p>
             </div>
-            <Button variant="secondary" onClick={logout} className="px-3 py-1.5">
+            <Button variant="secondary" onClick={logout} className="whitespace-nowrap px-3 py-1.5">
               Log out
             </Button>
           </div>

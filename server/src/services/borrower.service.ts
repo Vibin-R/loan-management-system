@@ -140,13 +140,13 @@ export async function applyForLoan(userId: string, input: ApplyInput) {
     BorrowerProfileModel.findOne({ userId }).lean(),
   ]);
   if (!user) throw AppError.unauthenticated();
+  await assertNoActiveLoan(userId);
   if (!profile?.bre.passed) {
     throw AppError.conflict('BRE_NOT_PASSED', 'Complete the eligibility check first');
   }
   if (!profile.salarySlip) {
     throw AppError.conflict('SLIP_MISSING', 'Upload your salary slip first');
   }
-  await assertNoActiveLoan(userId);
 
   const quote = calculateLoan(toPaise(input.principal), input.tenureDays);
   const now = new Date();
