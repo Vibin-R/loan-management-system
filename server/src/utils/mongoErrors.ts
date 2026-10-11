@@ -18,6 +18,15 @@ const DUPLICATE_KEY_ERRORS: Record<string, { code: string; message: string }> = 
 interface MongoDuplicateKeyError {
   code: 11000;
   keyPattern?: Record<string, unknown>;
+  keyValue?: Record<string, unknown>;
+  message?: string;
+}
+
+/** The indexed field: from keyPattern/keyValue, or parsed from "index: email_1 dup key". */
+function duplicateField(err: MongoDuplicateKeyError): string {
+  const fromKeys = Object.keys(err.keyPattern ?? err.keyValue ?? {})[0];
+  if (fromKeys) return fromKeys;
+  return /index: ([A-Za-z.]+)_/.exec(err.message ?? '')?.[1] ?? '';
 }
 
 const isDuplicateKeyError = (err: unknown): err is MongoDuplicateKeyError =>
@@ -25,8 +34,7 @@ const isDuplicateKeyError = (err: unknown): err is MongoDuplicateKeyError =>
 
 export function mapDuplicateKeyError(err: unknown): AppError | null {
   if (!isDuplicateKeyError(err)) return null;
-  const field = Object.keys(err.keyPattern ?? {})[0] ?? '';
-  const known = DUPLICATE_KEY_ERRORS[field];
+  const known = DUPLICATE_KEY_ERRORS[duplicateField(err)];
   return known
     ? AppError.conflict(known.code, known.message)
     : AppError.conflict('DUPLICATE', 'This record already exists');

@@ -17,7 +17,7 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const INPUT_CLASSES: Record<Appearance, string> = {
   default: 'rounded-md px-3 py-2 text-sm shadow-sm',
-  pill: 'h-12 rounded-full px-5 text-[15px]',
+  pill: 'h-12 rounded-full px-5 text-[15px] short:h-11',
 };
 
 /** A labelled input with its error shown directly underneath and linked for screen readers. */

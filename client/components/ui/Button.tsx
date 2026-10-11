@@ -13,7 +13,7 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 
 const SHAPE_CLASSES: Record<Shape, string> = {
   rounded: 'rounded-md px-4 py-2 text-sm',
-  pill: 'h-12 rounded-full px-6 text-[15px]',
+  pill: 'h-12 rounded-full px-6 text-[15px] short:h-11',
 };
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

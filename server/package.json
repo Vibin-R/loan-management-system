@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.ts\"",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "test:e2e": "node tests/e2e.mjs"
   },
   "dependencies": {
     "bcryptjs": "3.0.2",
@@ -25,6 +26,7 @@
     "helmet": "8.1.0",
     "jsonwebtoken": "9.0.2",
     "mongoose": "8.24.5",
+    "multer": "2.4.0",
     "pino": "9.7.0",
     "pino-http": "10.5.0",
     "zod": "3.25.76"
@@ -34,6 +36,7 @@
     "@types/cors": "2.8.19",
     "@types/express": "5.0.3",
     "@types/jsonwebtoken": "9.0.10",
+    "@types/multer": "2.0.0",
     "@types/node": "22.15.30",
     "eslint": "9.39.5",
     "eslint-config-prettier": "10.1.8",

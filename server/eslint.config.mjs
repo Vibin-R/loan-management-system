@@ -16,4 +16,6 @@ export default tseslint.config(
       'no-console': 'error',
     },
   },
+  // The e2e script is a CLI runner that reports to stdout.
+  { files: ['tests/**'], rules: { 'no-console': 'off' } },
 );

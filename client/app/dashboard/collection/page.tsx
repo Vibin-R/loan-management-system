@@ -1,9 +1,10 @@
-import { EmptyQueue, ModulePage } from '@/components/dashboard/ModulePage';
+import { ModulePage } from '@/components/dashboard/ModulePage';
+import { CollectionModule } from '@/components/dashboard/modules/CollectionModule';
 
 export default function CollectionPage() {
   return (
     <ModulePage moduleKey="collection">
-      <EmptyQueue message="No active loans to collect on." />
+      <CollectionModule />
     </ModulePage>
   );
 }

@@ -1,9 +1,10 @@
-import { EmptyQueue, ModulePage } from '@/components/dashboard/ModulePage';
+import { ModulePage } from '@/components/dashboard/ModulePage';
+import { DisbursementModule } from '@/components/dashboard/modules/DisbursementModule';
 
 export default function DisbursementPage() {
   return (
     <ModulePage moduleKey="disbursement">
-      <EmptyQueue message="No sanctioned loans waiting for disbursal." />
+      <DisbursementModule />
     </ModulePage>
   );
 }
