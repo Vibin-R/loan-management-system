@@ -1,6 +1,7 @@
 import type { Types } from 'mongoose';
 import type { LoanDoc } from '../models/Loan';
 import type { BorrowerProfileDoc } from '../models/BorrowerProfile';
+import type { PaymentDoc } from '../models/Payment';
 import { formatCalendarDate, toISTCalendarDate } from '../utils/dates';
 import { toRupees } from '../utils/money';
 
@@ -70,3 +71,15 @@ export function toProfileResponse(profile: WithId<BorrowerProfileDoc>) {
 
 export type LoanResponse = ReturnType<typeof toLoanResponse>;
 export type ProfileResponse = ReturnType<typeof toProfileResponse>;
+
+export function toPaymentResponse(payment: WithId<PaymentDoc>) {
+  return {
+    id: payment._id.toString(),
+    utr: payment.utr,
+    amount: toRupees(payment.amount),
+    paidOn: toDateOnly(payment.paidOn),
+    recordedAt: payment.createdAt,
+  };
+}
+
+export type PaymentResponse = ReturnType<typeof toPaymentResponse>;
