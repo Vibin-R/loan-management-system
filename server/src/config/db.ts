@@ -13,8 +13,26 @@ export async function connectDatabase(): Promise<void> {
     serverSelectionTimeoutMS: 5000,
     maxPoolSize: 20,
   });
-  logger.info({ db: mongoose.connection.name }, 'MongoDB connected');
+  transactionsSupported = await detectTransactionSupport();
+  logger.info(
+    { db: mongoose.connection.name, transactions: transactionsSupported },
+    transactionsSupported
+      ? 'MongoDB connected (replica set: payments use transactions)'
+      : 'MongoDB connected (standalone: payments use guarded atomic updates)',
+  );
 }
+
+let transactionsSupported = false;
+
+/** Transactions need a replica set or sharded cluster (Atlas always is one). */
+async function detectTransactionSupport(): Promise<boolean> {
+  const db = mongoose.connection.db;
+  if (!db) return false;
+  const hello = await db.admin().command({ hello: 1 });
+  return Boolean(hello.setName) || hello.msg === 'isdbgrid';
+}
+
+export const supportsTransactions = (): boolean => transactionsSupported;
 
 export async function disconnectDatabase(): Promise<void> {
   await mongoose.disconnect();
