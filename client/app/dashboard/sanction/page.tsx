@@ -1,9 +1,10 @@
-import { EmptyQueue, ModulePage } from '@/components/dashboard/ModulePage';
+import { ModulePage } from '@/components/dashboard/ModulePage';
+import { SanctionModule } from '@/components/dashboard/modules/SanctionModule';
 
 export default function SanctionPage() {
   return (
     <ModulePage moduleKey="sanction">
-      <EmptyQueue message="No applications waiting for review." />
+      <SanctionModule />
     </ModulePage>
   );
 }
