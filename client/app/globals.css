@@ -8,10 +8,15 @@
   --muted: #6b7280;
   --border: #e5e7eb;
   --primary: #1d4ed8;
+  --primary-strong: #3b6cf6;
   --primary-foreground: #ffffff;
   --success: #15803d;
   --warning: #b45309;
   --danger: #b91c1c;
+  /* Dark brand panel on the login and signup screens */
+  --ink: #1b1d22;
+  --ink-foreground: #f4f5f7;
+  --backdrop: #e7e9ee;
 }
 
 @theme inline {
@@ -21,10 +26,14 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
   --color-primary-foreground: var(--primary-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-backdrop: var(--backdrop);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
