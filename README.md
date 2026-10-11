@@ -1,5 +1,20 @@
 # Loan Management System
 
+<div align="center">
+
+[![▶ Watch the demo video](https://img.shields.io/badge/%E2%96%B6%20WATCH%20THE%20DEMO%20VIDEO-3%E2%80%935%20min-E11D48?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/11__ccSYpWUWbyCTpo59bF24RaqdmYOU3/view?usp=drivesdk)
+
+## 🎬 [Demo video: complete loan flow](https://drive.google.com/file/d/11__ccSYpWUWbyCTpo59bF24RaqdmYOU3/view?usp=drivesdk)
+
+**Borrower applies (eligibility pass &amp; fail) → Sanction approves → Disbursement → Payments recorded → Loan closes automatically**<br>
+plus role-based access for every module.
+
+[Run it locally](#1-quick-start) · [Demo accounts](#2-demo-accounts) 
+
+</div>
+
+---
+
 A lending platform with two sides:
 
 - **Borrower portal:** sign up, pass an eligibility check, upload a salary slip, choose an amount and tenure, apply, and track the loan.
@@ -13,6 +28,8 @@ APPLIED ──(Sanction approves)──▶ SANCTIONED ──(Disbursement)──
 ```
 
 ## Contents
+
+- [▶ Demo video](https://drive.google.com/file/d/11__ccSYpWUWbyCTpo59bF24RaqdmYOU3/view?usp=drivesdk)
 
 1. [Quick start](#1-quick-start)
 2. [Demo accounts](#2-demo-accounts)
