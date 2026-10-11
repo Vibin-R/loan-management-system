@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+
+/* Design tokens. Components use these through Tailwind (bg-background, text-muted, bg-primary, ...). */
+:root {
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --foreground: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+}
