@@ -31,30 +31,105 @@ APPLIED ──(Sanction approves)──▶ SANCTIONED ──(Disbursement)──
 
 ## 1. Quick start
 
-**You need:** Node.js 20+ and a MongoDB database. A free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster works, as does a local `mongod`.
+### Where things live
+
+This is one repository with **two separate apps**, each with its own `package.json`, `node_modules` and `.env`:
+
+| Folder | What it is | Tech | Runs on |
+|---|---|---|---|
+| [`server/`](server) | **Backend**: REST API, business rules, database access, seed script, API tests | Express 5 + TypeScript + Mongoose | http://localhost:5000/api/v1 |
+| [`client/`](client) | **Frontend**: borrower portal and operations dashboard | Next.js 15 (App Router) + TypeScript + Tailwind | http://localhost:3000 |
+| [`docs/`](docs) | Design document (schemas, indexes, decisions) | Markdown | — |
+
+```
+loan-management-system/
+├── server/   ← backend  (run first, in terminal 1)
+├── client/   ← frontend (run second, in terminal 2)
+├── docs/DESIGN.md
+└── README.md
+```
+
+The frontend talks to the backend over HTTP using `NEXT_PUBLIC_API_URL`, and the backend only accepts browser requests from `CLIENT_URL`. The defaults in both `.env.example` files already match each other, so nothing needs changing for a local run.
+
+### Prerequisites
+
+- **Node.js 20 or newer** (`node -v`)
+- **MongoDB**, either:
+  - a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster (copy its connection string), or
+  - a local MongoDB server: use `mongodb://127.0.0.1:27017/lms` (write `127.0.0.1`, not `localhost`).
+
+### Step 1: Clone
 
 ```bash
 git clone https://github.com/Vibin-R/loan-management-system.git
 cd loan-management-system
+```
 
-# 1. API (http://localhost:5000)
+### Step 2: Start the backend (terminal 1)
+
+```bash
 cd server
 npm install
-cp .env.example .env          # then set MONGO_URI and JWT_SECRET (see section 11)
-npm run seed                  # creates roles, permissions and one account per role
-npm run dev
+cp .env.example .env        # Windows PowerShell: copy .env.example .env
+```
 
-# 2. Web app (http://localhost:3000), in a second terminal
+Open `server/.env` and set two values:
+
+- `MONGO_URI`: your Atlas connection string, or `mongodb://127.0.0.1:27017/lms`
+- `JWT_SECRET`: any random string of 32+ characters. To generate one:
+  `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
+
+Then:
+
+```bash
+npm run seed                # creates roles, permissions and the 6 demo accounts (safe to re-run)
+npm run dev                 # starts the API with auto-reload
+```
+
+✅ **Working when** the terminal prints `API listening on http://localhost:5000/api/v1`, and http://localhost:5000/api/v1/health shows `"status":"ok","db":"up"`.
+
+Keep this terminal open.
+
+### Step 3: Start the frontend (terminal 2)
+
+From the repository root, in a **new** terminal:
+
+```bash
 cd client
 npm install
-cp .env.example .env.local    # the default already points at http://localhost:5000/api/v1
+cp .env.example .env.local  # Windows PowerShell: copy .env.example .env.local
 npm run dev
 ```
 
-Open **http://localhost:3000** and sign in with any account below. The login page also has a **Try a demo account** panel that fills in the details for you.
+✅ **Working when** the terminal prints `Ready` and `Local: http://localhost:3000`.
 
-> On Windows PowerShell, use `copy` instead of `cp`.
-> To generate a `JWT_SECRET`: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
+### Step 4: Open the app
+
+Go to **http://localhost:3000** and sign in with any account from [Demo accounts](#2-demo-accounts). The login page also has a **Try a demo account** panel that fills in the details for you.
+
+### Commands at a glance
+
+| | Backend (`server/`) | Frontend (`client/`) |
+|---|---|---|
+| Install | `npm install` | `npm install` |
+| Config file | `.env` (from `.env.example`) | `.env.local` (from `.env.example`) |
+| Seed demo data | `npm run seed` | — |
+| Run in development | `npm run dev` | `npm run dev` |
+| Production build + run | `npm run build` then `npm start` | `npm run build` then `npm start` |
+| Type check / lint | `npm run typecheck` · `npm run lint` | `npm run typecheck` · `npm run lint` |
+| End-to-end API test | `npm run test:e2e` (API must be running) | — |
+
+### If something doesn't work
+
+| Symptom | Fix |
+|---|---|
+| Backend exits with an environment error | `MONGO_URI` or `JWT_SECRET` is missing or too short in `server/.env`. |
+| Backend can't connect to MongoDB | Check the Atlas connection string and that your IP is allowed in Atlas → Network Access. For local MongoDB, use `127.0.0.1`, not `localhost`. |
+| Signup or login says "Roles are missing" | Run `npm run seed` in `server/`. |
+| The web app shows "Could not reach the server" | The backend isn't running, or `NEXT_PUBLIC_API_URL` in `client/.env.local` doesn't match the backend port. Restart `npm run dev` in `client/` after changing it. |
+| Browser shows a CORS error | `CLIENT_URL` in `server/.env` must be exactly the frontend address (`http://localhost:3000`). Restart the backend after changing it. |
+| Port 3000 or 5000 is already in use | Stop the other process, or change `PORT` in `server/.env` and update `NEXT_PUBLIC_API_URL` to match. |
+| "Too many attempts" on login | The auth rate limit (20 per 15 min) was hit. Restart the backend to reset it. |
 
 ---
 
@@ -208,6 +283,8 @@ All list endpoints are paginated (`page`, `limit` ≤ 100, `search`) and return 
 ---
 
 ## 8. Project structure
+
+The two apps live side by side: **`server/` is the backend** and **`client/` is the frontend** (see [Quick start](#1-quick-start) for how to run each).
 
 ```
 loan-management-system/
