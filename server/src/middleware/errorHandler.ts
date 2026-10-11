@@ -1,5 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
+import { MulterError } from 'multer';
 import { ZodError } from 'zod';
+import { env } from '../config/env';
 import { AppError } from '../utils/AppError';
 import { isDatabaseUnavailableError, mapDuplicateKeyError } from '../utils/mongoErrors';
 import { logger } from '../utils/logger';
@@ -38,6 +40,12 @@ function toAppError(err: unknown): AppError {
       'Some fields are invalid',
       err.issues.map((i) => ({ field: i.path.join('.'), message: i.message })),
     );
+  }
+
+  if (err instanceof MulterError) {
+    return err.code === 'LIMIT_FILE_SIZE'
+      ? new AppError(413, 'FILE_TOO_LARGE', `File is larger than ${env.MAX_UPLOAD_MB} MB.`)
+      : AppError.badRequest('Upload one file in the "file" field');
   }
 
   const duplicate = mapDuplicateKeyError(err);
