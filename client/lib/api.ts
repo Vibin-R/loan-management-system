@@ -82,19 +82,57 @@ async function request<T>(method: string, path: string, options: RequestOptions 
   }
 
   const payload: unknown = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const error = (payload as ApiErrorBody | null)?.error;
-    if (response.status === 401 && !path.startsWith('/auth/')) onUnauthenticated?.();
-    throw new ApiError(
-      response.status,
-      error?.code ?? 'UNKNOWN_ERROR',
-      error?.message ?? 'Something went wrong. Please try again.',
-      error?.details,
-    );
-  }
-
+  if (!response.ok) throw toApiError(response.status, payload, path);
   return (payload as ApiSuccess<T>).data;
+}
+
+/** Turns an error response into an ApiError, signing the user out on 401. */
+function toApiError(status: number, payload: unknown, path: string): ApiError {
+  const error = (payload as ApiErrorBody | null)?.error;
+  if (status === 401 && !path.startsWith('/auth/')) onUnauthenticated?.();
+  return new ApiError(
+    status,
+    error?.code ?? 'UNKNOWN_ERROR',
+    error?.message ?? 'Something went wrong. Please try again.',
+    error?.details,
+  );
+}
+
+/**
+ * Multipart upload with progress (0–100). Uses XMLHttpRequest because fetch can't report
+ * upload progress.
+ */
+function upload<T>(
+  path: string,
+  form: FormData,
+  onProgress?: (percent: number) => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', buildUrl(path));
+    xhr.setRequestHeader('Accept', 'application/json');
+    const token = tokenStore.get();
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+    xhr.onerror = () =>
+      reject(
+        new ApiError(0, 'NETWORK_ERROR', 'Upload failed. Check your connection and try again.'),
+      );
+    xhr.onload = () => {
+      let payload: unknown = null;
+      try {
+        payload = JSON.parse(xhr.responseText);
+      } catch {
+        // Non-JSON response; handled as an unknown error below.
+      }
+      if (xhr.status >= 200 && xhr.status < 300) resolve((payload as ApiSuccess<T>).data);
+      else reject(toApiError(xhr.status, payload, path));
+    };
+    xhr.send(form);
+  });
 }
 
 export const api = {
@@ -107,4 +145,5 @@ export const api = {
   patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>('PATCH', path, { ...options, body }),
   delete: <T>(path: string, options?: RequestOptions) => request<T>('DELETE', path, options),
+  upload,
 };
