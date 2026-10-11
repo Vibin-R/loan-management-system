@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { formatDate, formatINR } from '@/lib/format';
+import { useSubmitError } from '@/lib/formErrors';
 import { operationsApi } from '@/lib/operationsApi';
 import type { Loan, Payment } from '@/lib/types';
-import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
+import { DateField } from '@/components/ui/DateField';
 import { TextField } from '@/components/ui/TextField';
 
 interface RecordPaymentModalProps {
@@ -19,6 +20,7 @@ interface RecordPaymentModalProps {
 }
 
 type Field = 'utr' | 'amount' | 'paidOn';
+const FIELDS: readonly Field[] = ['utr', 'amount', 'paidOn'];
 
 /** Today's date in India as YYYY-MM-DD, the default payment date. */
 const todayIST = () =>
@@ -47,21 +49,27 @@ export function RecordPaymentModal({ loan, onClose, onRecorded }: RecordPaymentM
     paidOn: todayIST(),
   });
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
-  const [formError, setFormError] = useState<string | null>(null);
   const [payments, setPayments] = useState<Payment[] | null>(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const showSubmitError = useSubmitError();
+
+  const loadHistory = useCallback(async (loanId: string) => {
+    setPayments(null);
+    setHistoryError(null);
+    try {
+      setPayments((await operationsApi.listPayments(loanId)).items);
+    } catch (err) {
+      setHistoryError(err instanceof ApiError ? err.message : 'Could not load payment history.');
+    }
+  }, []);
 
   useEffect(() => {
     if (!loan) return;
     setValues({ utr: '', amount: '', paidOn: todayIST() });
     setErrors({});
-    setFormError(null);
-    setPayments(null);
-    operationsApi
-      .listPayments(loan.id)
-      .then((res) => setPayments(res.items))
-      .catch(() => setPayments([]));
-  }, [loan]);
+    void loadHistory(loan.id);
+  }, [loan, loadHistory]);
 
   const update = (field: Field, value: string) => {
     setValues((v) => ({ ...v, [field]: value }));
@@ -76,7 +84,6 @@ export function RecordPaymentModal({ loan, onClose, onRecorded }: RecordPaymentM
     if (Object.keys(found).length > 0) return;
 
     setSubmitting(true);
-    setFormError(null);
     try {
       const result = await operationsApi.recordPayment(loan.id, {
         utr: values.utr.trim().toUpperCase(),
@@ -85,10 +92,12 @@ export function RecordPaymentModal({ loan, onClose, onRecorded }: RecordPaymentM
       });
       onRecorded(result.loan);
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'DUPLICATE_UTR') setErrors({ utr: err.message });
-      else if (err instanceof ApiError && err.code === 'VALIDATION_ERROR')
-        setErrors(err.fieldErrors);
-      else setFormError(err instanceof ApiError ? err.message : 'Could not record the payment.');
+      // Duplicate UTR, amount over outstanding and date problems show under their inputs.
+      showSubmitError(err, {
+        fields: FIELDS,
+        setErrors,
+        fallback: 'Could not record the payment.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +130,6 @@ export function RecordPaymentModal({ loan, onClose, onRecorded }: RecordPaymentM
           </div>
 
           <form onSubmit={submit} noValidate className="space-y-4">
-            {formError && <Alert>{formError}</Alert>}
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
                 label="UTR number"
@@ -132,12 +140,11 @@ export function RecordPaymentModal({ loan, onClose, onRecorded }: RecordPaymentM
                 error={errors.utr}
                 autoFocus
               />
-              <TextField
+              <DateField
                 label="Payment date"
-                type="date"
                 max={todayIST()}
                 value={values.paidOn}
-                onChange={(e) => update('paidOn', e.target.value)}
+                onChange={(paidOn) => update('paidOn', paidOn)}
                 error={errors.paidOn}
               />
             </div>
@@ -174,7 +181,14 @@ export function RecordPaymentModal({ loan, onClose, onRecorded }: RecordPaymentM
             <h3 className="text-xs font-medium uppercase tracking-wider text-muted">
               Payment history
             </h3>
-            {payments === null ? (
+            {historyError ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm text-danger">{historyError}</p>
+                <Button variant="secondary" onClick={() => void loadHistory(loan.id)}>
+                  Try again
+                </Button>
+              </div>
+            ) : payments === null ? (
               <div className="flex items-center gap-2 text-sm text-muted">
                 <Spinner className="h-4 w-4" /> Loading…
               </div>

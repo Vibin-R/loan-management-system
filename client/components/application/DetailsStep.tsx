@@ -2,16 +2,18 @@
 
 import { useMemo, useState } from 'react';
 import { ApiError } from '@/lib/api';
+import { useSubmitError } from '@/lib/formErrors';
+import { useToast } from '@/lib/toast';
 import { BRE_RULES, EMPLOYMENT_OPTIONS, eligibilityHints } from '@/lib/bre';
 import { borrowerApi } from '@/lib/borrowerApi';
 import type { BorrowerProfile, BreFailure, EmploymentMode } from '@/lib/types';
 import { collectErrors } from '@/lib/validation';
-import { Alert } from '@/components/ui/Alert';
-import { Button } from '@/components/ui/Button';
+import { DateField } from '@/components/ui/DateField';
 import { TextField } from '@/components/ui/TextField';
-import { BreRejection } from './BreRejection';
+import { StepNav } from './StepNav';
 
 type Field = 'fullName' | 'pan' | 'dob' | 'monthlySalary' | 'employmentMode';
+const FIELDS: readonly Field[] = ['fullName', 'pan', 'dob', 'monthlySalary', 'employmentMode'];
 type Values = Record<Exclude<Field, 'employmentMode'>, string> & {
   employmentMode: EmploymentMode | '';
 };
@@ -36,7 +38,7 @@ function initialValues(profile: BorrowerProfile | null): Values {
 function validate(values: Values): Partial<Record<Field, string>> {
   return collectErrors({
     fullName: values.fullName.trim().length < 2 ? 'Enter your full name' : undefined,
-    pan: values.pan.length !== 10 ? 'PAN must be 10 characters' : undefined,
+    pan: values.pan ? undefined : 'Enter your PAN',
     dob: !values.dob
       ? 'Enter your date of birth'
       : values.dob > todayISO()
@@ -51,13 +53,25 @@ function validate(values: Values): Partial<Record<Field, string>> {
 }
 
 /** Step 2: personal details. Submitting runs the eligibility check (BRE) on the server. */
+/** The input each eligibility rule is about, so a failure shows under that input. */
+const FIELD_FOR_RULE: Record<BreFailure['rule'], Field> = {
+  AGE: 'dob',
+  SALARY: 'monthlySalary',
+  PAN: 'pan',
+  EMPLOYMENT: 'employmentMode',
+};
+
+const failuresToErrors = (failures: BreFailure[]): Partial<Record<Field, string>> =>
+  Object.fromEntries(failures.map((f) => [FIELD_FOR_RULE[f.rule], f.message]));
+
 export function DetailsStep({ profile, onEligible }: DetailsStepProps) {
   const [values, setValues] = useState<Values>(() => initialValues(profile));
-  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
-  const [failures, setFailures] = useState<BreFailure[]>(
-    profile && !profile.bre.passed ? profile.bre.failures : [],
+  // A returning borrower who failed last time sees why, under the inputs to fix.
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>(() =>
+    profile && !profile.bre.passed ? failuresToErrors(profile.bre.failures) : {},
   );
-  const [formError, setFormError] = useState<string | null>(null);
+  const toast = useToast();
+  const showSubmitError = useSubmitError();
   const [submitting, setSubmitting] = useState(false);
 
   // Instant hints from the client copy of the rules; the server decides on submit.
@@ -70,7 +84,6 @@ export function DetailsStep({ profile, onEligible }: DetailsStepProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setFormError(null);
     const found = validate(values);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -84,16 +97,24 @@ export function DetailsStep({ profile, onEligible }: DetailsStepProps) {
         monthlySalary: Number(values.monthlySalary),
         employmentMode: values.employmentMode as EmploymentMode,
       });
-      setFailures([]);
       onEligible(saved);
     } catch (err) {
       if (err instanceof ApiError && err.code === 'BRE_REJECTED') {
-        setFailures(err.details as BreFailure[]);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (err instanceof ApiError && err.code === 'VALIDATION_ERROR') {
-        setErrors(err.fieldErrors);
+        // Not eligible: a toast lists every failed rule, and each shows under its input.
+        const failures = err.details as BreFailure[];
+        setErrors(failuresToErrors(failures));
+        toast(
+          ["You're not eligible for a loan yet", ...failures.map((f) => `• ${f.message}`)].join(
+            '\n',
+          ),
+          'error',
+        );
       } else {
-        setFormError(err instanceof Error ? err.message : 'Could not save your details.');
+        showSubmitError(err, {
+          fields: FIELDS,
+          setErrors,
+          fallback: 'Could not save your details.',
+        });
       }
     } finally {
       setSubmitting(false);
@@ -102,9 +123,6 @@ export function DetailsStep({ profile, onEligible }: DetailsStepProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
-      {failures.length > 0 && <BreRejection failures={failures} />}
-      {formError && <Alert>{formError}</Alert>}
-
       <TextField
         label="Full name (as on PAN)"
         autoComplete="name"
@@ -125,14 +143,14 @@ export function DetailsStep({ profile, onEligible }: DetailsStepProps) {
           error={errors.pan}
           hint={hints.pan}
         />
-        <TextField
+        <DateField
           label="Date of birth"
-          type="date"
           max={todayISO()}
           value={values.dob}
-          onChange={(e) => update('dob', e.target.value)}
+          onChange={(dob) => update('dob', dob)}
           error={errors.dob}
           hint={hints.dob}
+          placeholder="Select your date of birth"
         />
       </div>
 
@@ -184,11 +202,7 @@ export function DetailsStep({ profile, onEligible }: DetailsStepProps) {
         )}
       </fieldset>
 
-      <div className="flex justify-end pt-2">
-        <Button type="submit" loading={submitting}>
-          Check eligibility &amp; continue
-        </Button>
-      </div>
+      <StepNav nextLabel="Check eligibility & continue" busy={submitting} />
     </form>
   );
 }
