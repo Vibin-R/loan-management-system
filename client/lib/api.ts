@@ -135,6 +135,20 @@ function upload<T>(
   });
 }
 
+/** Downloads a protected file (e.g. a salary slip) as a Blob, with the auth header attached. */
+async function getBlob(path: string): Promise<Blob> {
+  const token = tokenStore.get();
+  const response = await fetch(buildUrl(path), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }).catch(() => {
+    throw new ApiError(0, 'NETWORK_ERROR', 'Could not reach the server. Try again.');
+  });
+  if (!response.ok) {
+    throw toApiError(response.status, await response.json().catch(() => null), path);
+  }
+  return response.blob();
+}
+
 export const api = {
   get: <T>(path: string, options?: Omit<RequestOptions, 'body'>) =>
     request<T>('GET', path, options),
@@ -146,4 +160,5 @@ export const api = {
     request<T>('PATCH', path, { ...options, body }),
   delete: <T>(path: string, options?: RequestOptions) => request<T>('DELETE', path, options),
   upload,
+  getBlob,
 };

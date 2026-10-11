@@ -24,12 +24,3 @@ export function ModulePage({ moduleKey, children }: ModulePageProps) {
     </RequirePermission>
   );
 }
-
-/** Placeholder used until each module's queue is built (Phase 05). */
-export function EmptyQueue({ message }: { message: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-surface px-6 py-12 text-center text-sm text-muted">
-      {message}
-    </div>
-  );
-}

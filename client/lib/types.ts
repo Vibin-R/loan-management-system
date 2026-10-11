@@ -93,3 +93,33 @@ export interface ApplicationState {
   activeLoan: Loan | null;
   nextStep: ApplicationStep;
 }
+
+export interface Payment {
+  id: string;
+  utr: string;
+  amount: number;
+  paidOn: string; // YYYY-MM-DD
+  recordedAt: string;
+}
+
+export type LeadStage = 'REGISTERED' | 'BRE_FAILED' | 'ELIGIBLE';
+
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  stage: LeadStage;
+  signedUpAt: string;
+  profile: {
+    pan: string;
+    monthlySalary: number;
+    employmentMode: EmploymentMode;
+    breFailures: string[];
+  } | null;
+}
+
+export interface ListParams {
+  page: number;
+  limit?: number;
+  search?: string;
+}
